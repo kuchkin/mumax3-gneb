@@ -7,7 +7,7 @@ GPU accelerated micromagnetic simulator.
 Downloads and documentation
 ---------------------------
 
-http://mumax.github.io
+http://kuchkin.github.io
 
 
 Paper
