@@ -27,9 +27,40 @@ void my_print2(int noi, float *coord,float *dist,float *energy, char *outputfile
     	}
     	prev += coord[i];
     	distance += dist[i];
-    	snprintf(shortBufer2,100,"%i, %0.15f, %0.15f, %0.15f, %0.15f\n",i,prev,distance,energy[i],coord[i]);
+    	snprintf(shortBufer2,100,"%i, %0.15f, %0.15f\n",i,energy[i],prev);
 		fputs (shortBufer2,pFile);
     }
+    fclose (pFile);
+}
+void my_print_interp(int noi, float *coord,float *tang,float *dist,float *energy, char *outputfilename) {
+	FILE * pFile;
+	pFile = fopen (outputfilename,"w");
+    if (pFile!=NULL){
+    }
+    float distance = 0.0, prev = 0.0;
+    int Points = 10;
+    for(int i = 0;i<(noi-1); i++){
+
+    	
+    	float x1 = 1.0*i, x2 = 1.0*(i+1);
+    	float y1 = energy[i], y2 = energy[i+1];
+    	float d1 = coord[i]/tang[i], d2 = coord[i+1]/tang[i+1];
+    	if(i==0) d1 = 0.0;
+    	if(i == (noi-2)) d2 = 0.0;
+    	float a0 = x2*(x1*(x2-x1)*(d2*x1+d1*x2)-x2*(x2-3.*x1)*y1) + x1*x1*(x1-3.*x2)*y2;
+    	float a1 = d2*x1*(x1-x2)*(x1+2.*x2) - x2*(d1*(x2*x2+x1*x2-2.*x1*x1) + 6.*x1*(y1-y2));
+    	float a2 = 3.*(x1+x2)*(y1-y2) + d2*(x2*x2+x1*x2-2.*x1*x1) - d1*(x1-x2)*(x1+2.*x2);
+    	float a3 = (d1+d2)*(x1-x2)-2.*y1+2.*y2;
+    	for(int n = 0; n<Points; n++){
+    		float x = x1 + (1.0*n)/(1.0*Points);
+    		float y = -1.0*(a3*x*x*x + a2*x*x + a1*x + a0);
+    		snprintf(shortBufer2,100,"%f, %0.15f, %0.15f\n",x,y,prev + (1.0*n)*(coord[i])/(1.0*Points));
+			fputs (shortBufer2,pFile);
+    	}
+    	prev += coord[i];
+    }	
+    snprintf(shortBufer2,100,"%f, %0.15f, %0.15f\n",1.0*(noi-1),energy[noi-1],prev);
+	fputs (shortBufer2,pFile);
     fclose (pFile);
 }
 void vpo_print(int noi, float velocity,float torq,float vf,float k0k0, char *outputfilename) {
@@ -58,6 +89,8 @@ var (
 	MaxForce = 100.0
 	CIGNEB   = 0
 	Saddle   = 0
+	InterpolateEnergy = 0
+	
 )
 
 func init() {
@@ -66,6 +99,7 @@ func init() {
 	DeclVar("MaxForce", &MaxForce, "MaxForce")
 	DeclVar("CIGNEB", &CIGNEB, "CIGNEB")
 	DeclVar("Saddle", &Saddle, "Saddle")
+	DeclVar("InterpolateEnergy", &InterpolateEnergy, "InterpolateEnergy")
 }
 
 type VPOminimizer struct {
@@ -198,6 +232,11 @@ func (mini *VPOminimizer) Step() {
 			// 	print(i,",", getReactionCoordinate(mms,i,noi), ",", Energy[i], "\n")
 			// }
 
+			cuda.AddDotProduct2(mms, 1.0, md, k)
+			for i := 1; i < (noi - 1); i++ {
+				Distance[i] = getReactionCoordinate(mms, i, noi)
+			}
+
 			for i := 1; i < (noi - 1); i++ {
 				// cuda.GNEB(k,md,m,i,noi,TangentP[i],Energy[i-1],Energy[i],Energy[i+1],ReactionCoord[i],ReactionCoord[i+1],float32(k_force))
 				cuda.GNEB(k, md, m, i, noi, TangentP[i], ReactionCoord[i-1], ReactionCoord[i], float32(k_force), CIGNEB, Pos)
@@ -207,9 +246,19 @@ func (mini *VPOminimizer) Step() {
 
 		if NSteps%WritingIter == 0 {
 			// print("Energy[0]=", Energy[0], "Energy[",Pos,"]=", Energy[Pos], "Energy[",noi-1,"]=", Energy[noi-1], "\n")
+			if InterpolateEnergy == 1{
+
+				TangentP[0] = TangentP[1];
+				TangentP[noi-1] = TangentP[noi-2];
+
+				C.my_print_interp(C.int(noi), (*C.float)(unsafe.Pointer(&ReactionCoord[0])), (*C.float)(unsafe.Pointer(&TangentP[0])),
+				(*C.float)(unsafe.Pointer(&Distance[0])),
+				(*C.float)(unsafe.Pointer(&Energy[0])), C.CString(OD()+"table.txt"))
+			}else{
 			C.my_print2(C.int(noi), (*C.float)(unsafe.Pointer(&ReactionCoord[0])),
 				(*C.float)(unsafe.Pointer(&Distance[0])),
 				(*C.float)(unsafe.Pointer(&Energy[0])), C.CString(OD()+"table.txt"))
+			}
 
 		}
 
