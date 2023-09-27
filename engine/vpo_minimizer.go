@@ -44,7 +44,7 @@ void my_print_interp(int noi, float *coord,float *tang,float *dist,float *energy
     	
     	float x1 = 1.0*i, x2 = 1.0*(i+1);
     	float y1 = energy[i], y2 = energy[i+1];
-    	float d1 = coord[i]/tang[i], d2 = coord[i+1]/tang[i+1];
+    	float d1 = dist[i]/tang[i], d2 = dist[i+1]/tang[i+1];
     	if(i==0) d1 = 0.0;
     	if(i == (noi-2)) d2 = 0.0;
     	float a0 = x2*(x1*(x2-x1)*(d2*x1+d1*x2)-x2*(x2-3.*x1)*y1) + x1*x1*(x1-3.*x2)*y2;
@@ -248,8 +248,17 @@ func (mini *VPOminimizer) Step() {
 			// print("Energy[0]=", Energy[0], "Energy[",Pos,"]=", Energy[Pos], "Energy[",noi-1,"]=", Energy[noi-1], "\n")
 			if InterpolateEnergy == 1{
 
+				
+
+		
+
 				TangentP[0] = TangentP[1];
 				TangentP[noi-1] = TangentP[noi-2];
+
+				for i := 1; i < (noi - 1); i++ {
+					TangentP[i] = float32(math.Sqrt(float64(TangentP[i] )))*float32(m.Size()[X]*m.Size()[Y]*m.Size()[Z]/noi)/float32(6.0*Msat.GetRegion(0))
+					// print( Distance[i]/TangentP[i], "\n")
+				}
 
 				C.my_print_interp(C.int(noi), (*C.float)(unsafe.Pointer(&ReactionCoord[0])), (*C.float)(unsafe.Pointer(&TangentP[0])),
 				(*C.float)(unsafe.Pointer(&Distance[0])),
@@ -342,9 +351,21 @@ func (mini *VPOminimizer) Step() {
 	// vf = cuda.Sum(m1)
 	// ff := cuda.Sum(m2)
 	// vf = vf/ff
-	vf := cuda.Dot(vel, k)
-	ff := cuda.Dot(k, k)
-	vf = vf / ff
+	// vf := cuda.Dot(vel, k)
+	// ff := cuda.Dot(k, k)
+	cuda.AddDotProduct2(ff1, 1.0, vel, k)
+	vf := getReactionCoordinate(ff1, 0, noi) + getReactionCoordinate(ff1, noi-1, noi)
+	cuda.AddDotProduct2(ff1, 1.0, k, k)
+	ff := getReactionCoordinate(ff1, 0, noi) + getReactionCoordinate(ff1, noi-1, noi)
+
+	if MinimizeEndPoints == 1{
+		vf = vf / ff
+	}else{
+		vf = cuda.Dot(vel, k) - vf
+		ff = cuda.Dot(k, k) - ff
+		vf = vf / ff
+	}
+	
 
 	if vf <= 0 {
 		// print("tuta step = ", NSteps, " vf/ff = ", vf, "\n")
