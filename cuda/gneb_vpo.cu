@@ -25,6 +25,7 @@ vpo(float* __restrict__ mx,  float* __restrict__  my,  float* __restrict__ mz,
         bool p;
         if(minend == 0 ){
             p = true;
+            // p = ( (((i/(N/Nz))/(Nz/noi)) == 0 ) || (((i/(N/Nz))/(Nz/noi)) == (noi-1) ) )? false : true;
         }else{
             p = ( (((i/(N/Nz))/(Nz/noi)) == 0 ) || (((i/(N/Nz))/(Nz/noi)) == (noi-1) ) )? true : false;
         }

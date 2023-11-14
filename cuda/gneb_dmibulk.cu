@@ -213,11 +213,22 @@ gneb_adddmibulk(float* __restrict__ Hx, float* __restrict__ Hy, float* __restric
             float3 m1 = make_float3(0.0f, 0.0f, 0.0f);
             // i_ = idx(ix, iy, lclampz(iz-1));
             // if (iz-1 >= 0 || PBCz) {
-            //     m1 = make_float3(mx[i_], my[i_], mz[i_]);
+            //     m1 = make_float3(mx[i_], my[i_], mintz[i_]);
             // }
+            i_  = idx(ix, iy, iz);
+            int Nspins = (Nz/noi);
+            int di = iz%Nspins;
+            int image = iz/Nspins;
+            if(di > 0){
+                i_  = idx(ix, iy, iz-1);
+                m1 = make_float3(mx[i_], my[i_], mz[i_]);
+            }else if(PBCz){
+                i_  = idx(ix, iy, Nspins-1 + image*Nspins);
+                m1 = make_float3(mx[i_], my[i_], mz[i_]);
+            }
 
-            i_  = idx(ix, iy, lclamp(iz%(Nz/noi)-1,Nz/noi) + (iz/(Nz/noi))*Nz/noi);
-            if(lclamp(iz%(Nz/noi)-1,Nz/noi) >= 0 || PBCz) m1 = make_float3(mx[i_], my[i_], mz[i_]);
+            // i_  = idx(ix, iy, lclamp(iz%(Nz/noi)-1,Nz/noi) + (iz/(Nz/noi))*Nz/noi);
+            // if(lclamp(iz%(Nz/noi)-1,Nz/noi) >= 0 || PBCz) m1 = make_float3(mx[i_], my[i_], mz[i_]);
             int r1 = is0(m1)? r0 : regions[i_];
             float A = aLUT2d[symidx(r0, r1)];
             float D = DLUT2d[symidx(r0, r1)];
@@ -231,7 +242,7 @@ gneb_adddmibulk(float* __restrict__ Hx, float* __restrict__ Hy, float* __restric
                     m1.z = m0.z;
                 }
 
-                h   += (2.0f*A/(cz*cz)) * (m1 - m0);
+                h   += ((2.0f*A/(cz*cz)) * (m1 - m0));
                 h.x += (D/cz)*(- m1.y);
                 h.y -= (D/cz)*(- m1.x);
                 
@@ -245,8 +256,22 @@ gneb_adddmibulk(float* __restrict__ Hx, float* __restrict__ Hy, float* __restric
             // if (iz+1 < Nz || PBCz) {
             //     m2 = make_float3(mx[i_], my[i_], mz[i_]);
             // }
-            i_  = idx(ix, iy, hclamp(iz%(Nz/noi)+1,Nz/noi) + (iz/(Nz/noi))*Nz/noi);
-            if((hclamp(iz%(Nz/noi)+1,Nz/noi)) <= (Nz/noi-1) || PBCz) m2 = make_float3(mx[i_], my[i_], mz[i_]);
+            // i_  = idx(ix, iy, hclamp(iz%(Nz/noi)+1,Nz/noi) + (iz/(Nz/noi))*Nz/noi);
+            // if((hclamp(iz%(Nz/noi)+1,Nz/noi)) <= (Nz/noi-1) || PBCz) m2 = make_float3(mx[i_], my[i_], mz[i_]);
+
+            i_  = idx(ix, iy, iz);
+            int Nspins = (Nz/noi);
+            int di = iz%Nspins;
+            int image = iz/Nspins;
+
+            if(di < (Nspins-1)){
+                i_  = idx(ix, iy, iz+1);
+                m2 = make_float3(mx[i_], my[i_], mz[i_]);
+            }else if(PBCz){
+                i_  = idx(ix, iy, image*Nspins);
+                m2 = make_float3(mx[i_], my[i_], mz[i_]);
+            }
+
             int r1 = is0(m2)? r0 : regions[i_];
             float A = aLUT2d[symidx(r0, r1)];
             float D = DLUT2d[symidx(r0, r1)];
@@ -260,11 +285,11 @@ gneb_adddmibulk(float* __restrict__ Hx, float* __restrict__ Hy, float* __restric
                     m2.z = m0.z;
                 }
 
-                h   += (2.0f*A/(cz*cz)) * (m2 - m0);
+                h   += ((2.0f*A/(cz*cz)) * (m2 - m0));
                 h.x += (D/cz)*(m2.y );
                 h.y -= (D/cz)*(m2.x );
 
-            
+                
 
             }
         }
@@ -278,11 +303,9 @@ gneb_adddmibulk(float* __restrict__ Hx, float* __restrict__ Hy, float* __restric
 
     // write back, result is H + Hdmi + Hex
     float invMs = inv_Msat(Ms_, Ms_mul, I);
-    float par = 1.0;
-    // if(GNEB2D || GNEB3D) par = 0.5;
-    Hx[I] += h.x*invMs*par;
-    Hy[I] += h.y*invMs*par;
-    Hz[I] += h.z*invMs*par;
+    Hx[I] += h.x*invMs;
+    Hy[I] += h.y*invMs;
+    Hz[I] += h.z*invMs;
 }
 
 // Note on boundary conditions.
