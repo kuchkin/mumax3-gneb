@@ -91,9 +91,7 @@ func CalcMFMKernel(mesh *d.Mesh, lift, tipsize float64) (kernel [3]*d.Slice) {
 		pbc := mesh.PBC()
 		sz := padSize(mesh.Size(), pbc)
 		cs := mesh.CellSize()
-		noi := mesh.NumberOfImages()
-		gneb := mesh.GNEB()
-		mesh = d.NewMesh(sz[X], sz[Y], sz[Z], noi, gneb[X], gneb[Y], cs[X], cs[Y], cs[Z], pbc[:]...)
+		mesh = d.NewMesh(sz[X], sz[Y], sz[Z], cs[X], cs[Y], cs[Z], pbc[:]...)
 	}
 
 	// Shorthand
