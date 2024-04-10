@@ -122,10 +122,7 @@ func (q *cropped) EvalTo(dst *data.Slice) { EvalTo(q, dst) }
 
 func (q *cropped) Mesh() *data.Mesh {
 	c := MeshOf(q.parent).CellSize()
-	noi := 1
-	gneb2D := 0
-	gneb3D := 0
-	return data.NewMesh(q.x2-q.x1, q.y2-q.y1, q.z2-q.z1, noi, gneb2D, gneb3D, c[X], c[Y], c[Z])
+	return data.NewMesh(q.x2-q.x1, q.y2-q.y1, q.z2-q.z1, c[X], c[Y], c[Z])
 }
 
 func (q *cropped) average() []float64 { return qAverageUniverse(q) } // needed for table

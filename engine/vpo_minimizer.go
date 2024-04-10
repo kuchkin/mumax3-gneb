@@ -13,7 +13,7 @@ import (
 /*
 #include<stdio.h>
 char shortBufer2[100];
-void my_print2(int noi, float *coord,float *dist,float *energy, char *outputfilename) {
+void my_print2(int noi, float *coord,float *dist,float *energy,float *maxtorq, char *outputfilename) {
 	FILE * pFile;
 	pFile = fopen (outputfilename,"w");
     if (pFile!=NULL){
@@ -27,12 +27,12 @@ void my_print2(int noi, float *coord,float *dist,float *energy, char *outputfile
     	}
     	prev += coord[i];
     	distance += dist[i];
-    	snprintf(shortBufer2,100,"%i, %0.15f, %0.15f\n",i,energy[i],prev);
+    	snprintf(shortBufer2,100,"%i, %0.15f, %0.15f, %0.15f\n",i,energy[i],maxtorq[i],prev);
 		fputs (shortBufer2,pFile);
     }
     fclose (pFile);
 }
-void my_print_interp(int noi, float *coord,float *tang,float *dist,float *energy, char *outputfilename) {
+void my_print_interp(int noi, float *coord,float *tang,float *dist,float *energy, char *outputfilename,float pref) {
 	FILE * pFile;
 	pFile = fopen (outputfilename,"w");
     if (pFile!=NULL){
@@ -44,7 +44,7 @@ void my_print_interp(int noi, float *coord,float *tang,float *dist,float *energy
     	
     	float x1 = 1.0*i, x2 = 1.0*(i+1);
     	float y1 = energy[i], y2 = energy[i+1];
-    	float d1 = dist[i]/tang[i], d2 = dist[i+1]/tang[i+1];
+    	float d1 = -1.0*pref*dist[i]/tang[i], d2 = -1.0*pref*dist[i+1]/tang[i+1];
     	if(i==0) d1 = 0.0;
     	if(i == (noi-2)) d2 = 0.0;
     	float a0 = x2*(x1*(x2-x1)*(d2*x1+d1*x2)-x2*(x2-3.*x1)*y1) + x1*x1*(x1-3.*x2)*y2;
@@ -90,6 +90,7 @@ var (
 	CIGNEB   = 0
 	Saddle   = 0
 	InterpolateEnergy = 0
+	PPP = 1.0
 	
 )
 
@@ -100,6 +101,7 @@ func init() {
 	DeclVar("CIGNEB", &CIGNEB, "CIGNEB")
 	DeclVar("Saddle", &Saddle, "Saddle")
 	DeclVar("InterpolateEnergy", &InterpolateEnergy, "InterpolateEnergy")
+	DeclVar("PPP", &PPP, "PPP")
 }
 
 type VPOminimizer struct {
@@ -152,6 +154,9 @@ func (mini *VPOminimizer) Step() {
 	noi := M.Mesh().NumberOfImages()
 	Nz := m.Size()[Z]
 
+	///max torque
+	MaxTorq := make([]float32, noi)
+
 	if (gneb == 1) || (gneb == 2) {
 		coef := float32(Msat.GetRegion(0)) / float32(m.Size()[X]*m.Size()[Y]*m.Size()[Z]/noi)
 		ReactionCoord := make([]float32, noi)
@@ -175,6 +180,12 @@ func (mini *VPOminimizer) Step() {
 			Energy[i] = -0.5 * coef * getReactionCoordinate(en, i, noi) //
 		}
 
+		cuda.CrossProduct(k0, m, k0)
+		cuda.AddDotProduct2(en, 1.0, k0, k0)
+		for i := 0; i < (noi); i++ {
+			MaxTorq[i] = getReactionCoordinate(en, i, noi)
+		}
+
 		//get max energy
 		Pos := 0
 		E0 := Energy[Pos]
@@ -184,10 +195,11 @@ func (mini *VPOminimizer) Step() {
 				Pos = i
 			}
 		}
+		Saddle = Pos;
 
-		if Saddle > 0 && Saddle < noi {
-			Pos = Saddle
-		}
+		// if Saddle > 0 && Saddle < noi {
+		// 	Pos = Saddle
+		// }
 
 		if DoRelax != 1 {
 			//shiftet image for distance and reaction coordinates calculation
@@ -239,7 +251,7 @@ func (mini *VPOminimizer) Step() {
 
 			for i := 1; i < (noi - 1); i++ {
 				// cuda.GNEB(k,md,m,i,noi,TangentP[i],Energy[i-1],Energy[i],Energy[i+1],ReactionCoord[i],ReactionCoord[i+1],float32(k_force))
-				cuda.GNEB(k, md, m, i, noi, TangentP[i], ReactionCoord[i-1], ReactionCoord[i], float32(k_force), CIGNEB, Pos)
+				cuda.GNEB(k, md, m, i, noi, TangentP[i], ReactionCoord[i-1], ReactionCoord[i], float32(k_force), CIGNEB, Saddle)
 			}
 
 		}
@@ -256,17 +268,18 @@ func (mini *VPOminimizer) Step() {
 				TangentP[noi-1] = TangentP[noi-2];
 
 				for i := 1; i < (noi - 1); i++ {
-					TangentP[i] = float32(math.Sqrt(float64(TangentP[i] )))*float32(m.Size()[X]*m.Size()[Y]*m.Size()[Z]/noi)/float32(6.0*Msat.GetRegion(0))
-					// print( Distance[i]/TangentP[i], "\n")
+					TangentP[i] = float32(math.Sqrt(float64(TangentP[i] )))*float32(m.Size()[X]*m.Size()[Y]*m.Size()[Z]/noi)/float32(Msat.GetRegion(0))
+					// print( Distance[i]/TangentP[i], "\n") 
 				}
 
 				C.my_print_interp(C.int(noi), (*C.float)(unsafe.Pointer(&ReactionCoord[0])), (*C.float)(unsafe.Pointer(&TangentP[0])),
 				(*C.float)(unsafe.Pointer(&Distance[0])),
-				(*C.float)(unsafe.Pointer(&Energy[0])), C.CString(OD()+"table.txt"))
+				(*C.float)(unsafe.Pointer(&Energy[0])), C.CString(OD()+"table.txt"),(C.float)(2.0*noi))
 			}else{
 			C.my_print2(C.int(noi), (*C.float)(unsafe.Pointer(&ReactionCoord[0])),
 				(*C.float)(unsafe.Pointer(&Distance[0])),
-				(*C.float)(unsafe.Pointer(&Energy[0])), C.CString(OD()+"table.txt"))
+				(*C.float)(unsafe.Pointer(&Energy[0])),
+				(*C.float)(unsafe.Pointer(&MaxTorq[0])), C.CString(OD()+"table.txt"))
 			}
 
 		}
@@ -326,6 +339,7 @@ func (mini *VPOminimizer) Step() {
 	cuda.Projection(k, m)
 	// Now we have Dot(k,m) = 0
 
+
 	// cuda.AddDotProduct2(vf1,1.0,m,k)
 	// mk0 := float32(cuda.Dot(vf1,vf1))/float32(m.Size()[X]*m.Size()[Y]*m.Size()[Z])
 
@@ -361,8 +375,8 @@ func (mini *VPOminimizer) Step() {
 	if MinimizeEndPoints == 1{
 		vf = vf / ff
 	}else{
-		vf = cuda.Dot(vel, k) - vf
-		ff = cuda.Dot(k, k) - ff
+		vf = cuda.Dot(vel, k)// - vf
+		ff = cuda.Dot(k, k)// - ff
 		vf = vf / ff
 	}
 	
@@ -404,8 +418,14 @@ func (mini *VPOminimizer) Step() {
 	//now we have Dot(k0,m) = 0
 
 	// cuda.Madd2(v,k0,k0,float32(1.0),float32(0.0))
+	//torque
+
+	
 
 	SetEffectiveField(k)
+
+
+
 	// cuda.ZeroMask(k, FrozenSpins.gpuLUT1(), regions.Gpu())
 
 	////testing

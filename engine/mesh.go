@@ -32,22 +32,20 @@ func arg(msg string, test bool) {
 // Set the simulation mesh to Nx x Ny x Nz cells of given size.
 // Can be set only once at the beginning of the simulation.
 // TODO: dedup arguments from globals
-func SetMesh(Nx, Ny, Nz, noi int, cellSizeX, cellSizeY, cellSizeZ float64, pbcx, pbcy, pbcz, gneb2D, gneb3D int) {
+func SetMesh(Nx, Ny, Nz int, cellSizeX, cellSizeY, cellSizeZ float64, pbcx, pbcy, pbcz int) {
 	SetBusy(true)
 	defer SetBusy(false)
 
 	arg("GridSize", Nx > 0 && Ny > 0 && Nz > 0)
 	arg("CellSize", cellSizeX > 0 && cellSizeY > 0 && cellSizeZ > 0)
 	arg("PBC", pbcx >= 0 && pbcy >= 0 && pbcz >= 0)
-	arg("GNEB", gneb2D >= 0 && gneb3D >= 0)
 
 	prevSize := globalmesh_.Size()
 	pbc := []int{pbcx, pbcy, pbcz}
-	// gneb := []int{gneb2D, gneb3D}
 
 	if globalmesh_.Size() == [3]int{0, 0, 0} {
 		// first time mesh is set
-		globalmesh_ = *data.NewMesh(Nx, Ny, Nz, noi, gneb2D, gneb3D, cellSizeX, cellSizeY, cellSizeZ, pbc...)
+		globalmesh_ = *data.NewMesh(Nx, Ny, Nz, cellSizeX, cellSizeY, cellSizeZ, pbc...)
 		M.alloc()
 		regions.alloc()
 	} else {
@@ -62,7 +60,61 @@ func SetMesh(Nx, Ny, Nz, noi int, cellSizeX, cellSizeY, cellSizeZ float64, pbcx,
 		cuda.FreeBuffers()
 
 		// resize everything
-		globalmesh_ = *data.NewMesh(Nx, Ny, Nz, noi, gneb2D, gneb3D, cellSizeX, cellSizeY, cellSizeZ, pbc...)
+		globalmesh_ = *data.NewMesh(Nx, Ny, Nz, cellSizeX, cellSizeY, cellSizeZ, pbc...)
+		M.resize()
+		regions.resize()
+		geometry.buffer.Free()
+		geometry.buffer = data.NilSlice(1, Mesh().Size())
+		geometry.setGeom(geometry.shape)
+
+		// remove excitation extra terms if they don't fit anymore
+		// up to the user to add them again
+		if Mesh().Size() != prevSize {
+			B_ext.RemoveExtraTerms()
+			J.RemoveExtraTerms()
+		}
+
+		if Mesh().Size() != prevSize {
+			B_therm.noise.Free()
+			B_therm.noise = nil
+		}
+	}
+	lazy_gridsize = []int{Nx, Ny, Nz}
+	lazy_cellsize = []float64{cellSizeX, cellSizeY, cellSizeZ}
+	lazy_pbc = []int{pbcx, pbcy, pbcz}
+}
+
+func SetMeshGNEB(Nx, Ny, Nz, noi int, cellSizeX, cellSizeY, cellSizeZ float64, pbcx, pbcy, pbcz, gneb2D, gneb3D int) {
+	SetBusy(true)
+	defer SetBusy(false)
+
+	arg("GridSize", Nx > 0 && Ny > 0 && Nz > 0)
+	arg("CellSize", cellSizeX > 0 && cellSizeY > 0 && cellSizeZ > 0)
+	arg("PBC", pbcx >= 0 && pbcy >= 0 && pbcz >= 0)
+	arg("GNEB", gneb2D >= 0 && gneb3D >= 0)
+
+	prevSize := globalmesh_.Size()
+	pbc := []int{pbcx, pbcy, pbcz}
+	// gneb := []int{gneb2D, gneb3D}
+
+	if globalmesh_.Size() == [3]int{0, 0, 0} {
+		// first time mesh is set
+		globalmesh_ = *data.NewMeshGneb(Nx, Ny, Nz, noi, gneb2D, gneb3D, cellSizeX, cellSizeY, cellSizeZ, pbc...)
+		M.alloc()
+		regions.alloc()
+	} else {
+		// here be dragons
+		LogOut("resizing...")
+
+		// free everything
+		conv_.Free()
+		conv_ = nil
+		mfmconv_.Free()
+		mfmconv_ = nil
+		cuda.FreeBuffers()
+
+		// resize everything
+		globalmesh_ = *data.NewMeshGneb(Nx, Ny, Nz, noi, gneb2D, gneb3D, cellSizeX, cellSizeY, cellSizeZ, pbc...)
 		M.resize()
 		regions.resize()
 		geometry.buffer.Free()
@@ -103,30 +155,30 @@ var (
 func SetGridSize(Nx, Ny, Nz int) {
 	lazy_gridsize = []int{Nx, Ny, Nz}
 	if lazy_cellsize != nil {
-		SetMesh(Nx, Ny, Nz, lazy_imsize[0], lazy_cellsize[X], lazy_cellsize[Y], lazy_cellsize[Z], lazy_pbc[X], lazy_pbc[Y], lazy_pbc[Z], lazy_gneb[X], lazy_gneb[Y])
+		SetMesh(Nx, Ny, Nz, lazy_cellsize[X], lazy_cellsize[Y], lazy_cellsize[Z], lazy_pbc[X], lazy_pbc[Y], lazy_pbc[Z])
 	}
 }
 
 func SetCellSize(cx, cy, cz float64) {
 	lazy_cellsize = []float64{cx, cy, cz}
 	if lazy_gridsize != nil {
-		SetMesh(lazy_gridsize[X], lazy_gridsize[Y], lazy_gridsize[Z], lazy_imsize[0], cx, cy, cz, lazy_pbc[X], lazy_pbc[Y], lazy_pbc[Z], lazy_gneb[X], lazy_gneb[Y])
+		SetMesh(lazy_gridsize[X], lazy_gridsize[Y], lazy_gridsize[Z],  cx, cy, cz, lazy_pbc[X], lazy_pbc[Y], lazy_pbc[Z])
 	}
 }
 
 func SetPBC(nx, ny, nz int) {
 	lazy_pbc = []int{nx, ny, nz}
 	if lazy_gridsize != nil && lazy_cellsize != nil {
-		SetMesh(lazy_gridsize[X], lazy_gridsize[Y], lazy_gridsize[Z], lazy_imsize[0],
+		SetMesh(lazy_gridsize[X], lazy_gridsize[Y], lazy_gridsize[Z],
 			lazy_cellsize[X], lazy_cellsize[Y], lazy_cellsize[Z],
-			lazy_pbc[X], lazy_pbc[Y], lazy_pbc[Z], lazy_gneb[X], lazy_gneb[Y])
+			lazy_pbc[X], lazy_pbc[Y], lazy_pbc[Z])
 	}
 }
 
 func SetGNEB(gneb2D, gneb3D int) {
 	lazy_gneb = []int{gneb2D, gneb3D}
 	if lazy_gridsize != nil && lazy_cellsize != nil {
-		SetMesh(lazy_gridsize[X], lazy_gridsize[Y], lazy_gridsize[Z], lazy_imsize[0],
+		SetMeshGNEB(lazy_gridsize[X], lazy_gridsize[Y], lazy_gridsize[Z], lazy_imsize[0],
 			lazy_cellsize[X], lazy_cellsize[Y], lazy_cellsize[Z],
 			lazy_pbc[X], lazy_pbc[Y], lazy_pbc[Z], lazy_gneb[X], lazy_gneb[Y])
 	}
@@ -135,7 +187,7 @@ func SetGNEB(gneb2D, gneb3D int) {
 func SetImagesNumber(Noi int) {
 	lazy_imsize = []int{Noi}
 	if lazy_gridsize != nil && lazy_cellsize != nil {
-		SetMesh(lazy_gridsize[X], lazy_gridsize[Y], lazy_gridsize[Z], lazy_imsize[0],
+		SetMeshGNEB(lazy_gridsize[X], lazy_gridsize[Y], lazy_gridsize[Z], lazy_imsize[0],
 			lazy_cellsize[X], lazy_cellsize[Y], lazy_cellsize[Z],
 			lazy_pbc[X], lazy_pbc[Y], lazy_pbc[Z], lazy_gneb[X], lazy_gneb[Y])
 	}
