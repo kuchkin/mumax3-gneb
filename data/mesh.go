@@ -23,7 +23,24 @@ type Mesh struct {
 // Retruns a new mesh with N0 x N1 x N2 cells of size cellx x celly x cellz.
 // Optional periodic boundary conditions (pbc): number of repetitions
 // in X, Y, Z direction. 0,0,0 means no periodicity.
-func NewMesh(N0, N1, N2, noi, gneb2D, gneb3D int, cellx, celly, cellz float64, pbc ...int) *Mesh {
+func NewMesh(N0, N1, N2 int, cellx, celly, cellz float64, pbc ...int) *Mesh {
+	var pbc3 [3]int
+	if len(pbc) == 3 {
+		copy(pbc3[:], pbc)
+	} else {
+		if len(pbc) != 0 {
+			log.Panic("mesh: need 0 or 3 PBC arguments, got:", pbc)
+		}
+	}
+	size := [3]int{N0, N1, N2}
+	gneb := [2]int{0, 0}
+	return &Mesh{size, [3]float64{cellx, celly, cellz}, pbc3, "m", 1, gneb}
+}
+
+
+
+
+func NewMeshGneb(N0, N1, N2, noi, gneb2D, gneb3D int, cellx, celly, cellz float64, pbc ...int) *Mesh {
 	var pbc3 [3]int
 	if len(pbc) == 3 {
 		copy(pbc3[:], pbc)
