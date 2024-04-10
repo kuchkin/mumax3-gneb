@@ -13,6 +13,7 @@ func init() {
 	DeclFunc("SetGNEB", SetGNEB, `Sets the dimensions of images`)
 	DeclFunc("SetImagesNumber", SetImagesNumber, `Sets the number of images `)
 	DeclFunc("SetMesh", SetMesh, `Sets GridSize, CellSize and PBC at the same time`)
+	DeclFunc("SetMeshGNEB", SetMeshGNEB, `Sets GridSize, CellSize, PBC and Gneb parameters at the same time`)
 	DeclFunc("SetPBC", SetPBC, "Sets the number of repetitions in X,Y,Z to create periodic boundary "+
 		"conditions. The number of repetitions determines the cutoff range for the demagnetization.")
 
