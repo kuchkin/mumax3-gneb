@@ -40,12 +40,6 @@ Consider downloading a pre-compiled binary. If you want to compile nevertheless:
     - on Ubuntu: `sudo apt-get install gcc`
   * if you have git installed: 
     - `go get github.com/kuchkin/mumax3-gneb/cmd/mumax3`
-  * if you don't have git:
-    - seriously, no git?
-    - get the source from https://github.com/kuchkin/mumax3-gneb/releases
-    - unzip the source into $GOPATH/src/github.com/kuchkin/mumax3-gneb
-    - `cd $GOPATH/src/github.com/kuchkin/mumax3-gneb/cmd/mumax3`
-    - `go install`
   * optional: install gnuplot if you want pretty graphs
     - on ubuntu: `sudo apt-get install gnuplot`
   * use the Makefile if there is a need to recompile the cuda kernels
