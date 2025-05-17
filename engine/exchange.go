@@ -35,6 +35,7 @@ var (
 	JZ = 1.0
 	// NumOfImages = NewScalarParam("NumOfImages", "dimless", "Number of Images", &NumOfImages)
 	// NumOfImages   exchParam // number of images
+	Kappa = 0.0
 )
 
 var AddExchangeEnergyDensity = makeEdensAdder(&B_exch, -0.5) // TODO: normal func
@@ -46,6 +47,7 @@ func init() {
 	DeclFunc("ext_ScaleDind", ScaleInterDind, "Re-scales Dind coupling between two regions.")
 	DeclFunc("ext_InterDind", InterDind, "Sets Dind coupling between two regions.")
 	DeclVar("OpenBC", &OpenBC, "Use open boundary conditions (default=false)")
+	DeclVar("Kappa", &Kappa, "Kappa")
 	// DeclVar("GNEB2D", &GNEB2D, "GNEB?")
 	// DeclVar("GNEB3D", &GNEB3D, "GNEB?")
 	DeclVar("JZ", &JZ, "JZ")
@@ -72,6 +74,11 @@ func AddExchangeField(dst *data.Slice) {
 	case inter && bulk:
 		util.Fatal("Cannot have interfacial-induced DMI and bulk DMI at the same time")
 	}
+}
+
+func AddExchangeField4D(n, dst *data.Slice) {
+	ms := Msat.MSlice()
+	cuda.AddExchange4D(n, dst, lex2.Gpu(), float32(Kappa), ms, regions.Gpu(), M.Mesh())
 }
 
 // Set dst to the average exchange coupling per cell (average of lex2 with all neighbors).

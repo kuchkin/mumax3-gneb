@@ -20,3 +20,9 @@ func SetEffectiveField(dst *data.Slice) {
 	}
 	AddCustomField(dst)
 }
+
+func SetEffectiveField4D(n, dst *data.Slice) {
+
+	AddExchangeField4D(n, dst)
+
+}

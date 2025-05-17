@@ -48,6 +48,12 @@ func SetTorque(dst *data.Slice) {
 	FreezeSpins(dst)
 }
 
+func SetTorque4D(n, l, dst *data.Slice) {
+	SetLLTorque4D(n, l, dst)
+	AddSTTorque4D(n, l,dst)
+	// FreezeSpins(dst)
+}
+
 // Sets dst to the current Landau-Lifshitz torque
 func SetLLTorque(dst *data.Slice) {
 	SetEffectiveField(dst) // calc and store B_eff
@@ -58,6 +64,20 @@ func SetLLTorque(dst *data.Slice) {
 	} else {
 		cuda.LLNoPrecess(dst, M.Buffer(), dst)
 	}
+}
+
+
+func SetLLTorque4D(n, l, dst *data.Slice) {
+	SetEffectiveField(dst) // calc and store B_eff
+	alpha := Alpha.MSlice()
+	defer alpha.Recycle()
+
+	cuda.LLTorque4D(n,l,dst, M.Buffer(), dst, alpha) // overwrite dst with torque
+	// if Precess {
+	// 	cuda.LLTorque(dst, M.Buffer(), dst, alpha) // overwrite dst with torque
+	// } else {
+	// 	cuda.LLNoPrecess(dst, M.Buffer(), dst)
+	// }
 }
 
 // Adds the current spin transfer torque to dst
@@ -110,6 +130,57 @@ func AddSTTorque(dst *data.Slice) {
 			CurrentSignFromFixedLayerPosition[fixedLayerPosition],
 			Mesh())
 	}
+}
+
+func AddSTTorque4D(n, l, dst *data.Slice) {
+	if J.isZero() {
+		return
+	}
+	util.AssertMsg(!Pol.isZero(), "spin polarization should not be 0")
+	jspin, rec := J.Slice()
+	if rec {
+		defer cuda.Recycle(jspin)
+	}
+	fl, rec := FixedLayer.Slice()
+	if rec {
+		defer cuda.Recycle(fl)
+	}
+	if !DisableZhangLiTorque {
+		msat := Msat.MSlice()
+		defer msat.Recycle()
+		j := J.MSlice()
+		defer j.Recycle()
+		alpha := Alpha.MSlice()
+		defer alpha.Recycle()
+		xi := Xi.MSlice()
+		defer xi.Recycle()
+		pol := Pol.MSlice()
+		defer pol.Recycle()
+		cuda.AddZhangLiTorque4D(n, l, dst, M.Buffer(), msat, j, alpha, xi, pol, Mesh())
+	}
+	// if !DisableSlonczewskiTorque && !FixedLayer.isZero() {
+	// 	msat := Msat.MSlice()
+	// 	defer msat.Recycle()
+	// 	j := J.MSlice()
+	// 	defer j.Recycle()
+	// 	fixedP := FixedLayer.MSlice()
+	// 	defer fixedP.Recycle()
+	// 	alpha := Alpha.MSlice()
+	// 	defer alpha.Recycle()
+	// 	pol := Pol.MSlice()
+	// 	defer pol.Recycle()
+	// 	lambda := Lambda.MSlice()
+	// 	defer lambda.Recycle()
+	// 	epsPrime := EpsilonPrime.MSlice()
+	// 	defer epsPrime.Recycle()
+	// 	thickness := FreeLayerThickness.MSlice()
+	// 	defer thickness.Recycle()
+	// 	cuda.AddSlonczewskiTorque2(dst, M.Buffer(),
+	// 		msat, j, fixedP, alpha, pol, lambda, epsPrime,
+	// 		thickness,
+	// 		CurrentSignFromFixedLayerPosition[fixedLayerPosition],
+	// 		Mesh())
+	// }
 }
 
 func FreezeSpins(dst *data.Slice) {

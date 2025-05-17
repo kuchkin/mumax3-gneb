@@ -64,6 +64,7 @@ const (
 	RUNGEKUTTA     = 4
 	DORMANDPRINCE  = 5
 	FEHLBERG       = 6
+	RUNGEKUTTA4D   = 8
 )
 
 func SetSolver(typ int) {
@@ -88,6 +89,8 @@ func SetSolver(typ int) {
 		stepper = new(RK45DP)
 	case FEHLBERG:
 		stepper = new(RK56)
+	case RUNGEKUTTA4D:
+		stepper = new(RK4D)
 	}
 	solvertype = typ
 }
@@ -95,6 +98,11 @@ func SetSolver(typ int) {
 // write torque to dst and increment NEvals
 func torqueFn(dst *data.Slice) {
 	SetTorque(dst)
+	NEvals++
+}
+
+func torqueFn4D(n, l, dst *data.Slice) {
+	SetTorque4D(n, l, dst)
 	NEvals++
 }
 
