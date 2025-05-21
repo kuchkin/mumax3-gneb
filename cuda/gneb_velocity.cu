@@ -31,10 +31,10 @@ velocity(float* __restrict__ vx,  float* __restrict__  vy,  float* __restrict__ 
         vz[i] = kz[i]*COS-m0z[i]*SIN;
         
 
-        if((vx[i]*vx[i]+vy[i]*vy[i]+vz[i]*vz[i])==1){
-            vx[i] = 100.0;
-            vy[i] = 100.0;
-            vz[i] = 100.0;
-        }
+        // if((vx[i]*vx[i]+vy[i]*vy[i]+vz[i]*vz[i])==1){
+        //     vx[i] = 100.0;
+        //     vy[i] = 100.0;
+        //     vz[i] = 100.0;
+        // }
     }
 }

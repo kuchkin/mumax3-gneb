@@ -24,9 +24,9 @@ addexchange(float* __restrict__ Bx, float* __restrict__ By, float* __restrict__ 
     int I = idx(ix, iy, iz);
     float3 m0 = make_float3(mx[I], my[I], mz[I]);
 
-    if (is0(m0)) {
-        return;
-    }
+    // if (is0(m0)) {
+    //     return;
+    // }
 
     uint8_t r0 = regions[I];
     float3 B  = make_float3(0.0,0.0,0.0);

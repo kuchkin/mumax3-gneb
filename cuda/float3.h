@@ -57,6 +57,11 @@ inline __device__ float len(float3 a) {
 	return sqrtf(dot(a,a));
 }
 
+// lenght of the 4-components vector
+inline __device__ float len4D(float3 a, float a4) {
+	return sqrtf(dot(a,a) + a4*a4);
+}
+
 // returns a normalized copy of the 3-components vector
 inline __device__ float3 normalized(float3 a){
     float veclen = (len(a) != 0.0f) ? 1.0f / len(a) : 0.0f;

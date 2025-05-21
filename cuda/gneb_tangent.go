@@ -20,3 +20,12 @@ func Tangent(T, m *data.Slice, image, noi int, Ep, Ei, En, Lp, Ln float32) {
 		m.DevPtr(Y), m.DevPtr(Z), N[X], N[Y], N[Z], noi, image, Ep, Ei, En, Lp, Ln, cfg)
 
 }
+
+func Tangent4D(T, T4, m, n *data.Slice, image, noi int, Ep, Ei, En, Lp, Ln float32) {
+	N := T.Size()
+	cfg := make3DConf(N)
+
+	k_tangent4D_async(T.DevPtr(X), T.DevPtr(Y), T.DevPtr(Z), T4.DevPtr(X), m.DevPtr(X),
+		m.DevPtr(Y), m.DevPtr(Z), n.DevPtr(X), N[X], N[Y], N[Z], noi, image, Ep, Ei, En, Lp, Ln, cfg)
+
+}

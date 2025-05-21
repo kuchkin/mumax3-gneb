@@ -32,9 +32,9 @@ gneb_adddmi(float* __restrict__ Hx, float* __restrict__ Hy, float* __restrict__ 
     uint8_t r0 = regions[I];
     int i_;                                       // neighbor index
 
-    if(is0(m0)) {
-        return;
-    }
+    // if(is0(m0)) {
+    //     return;
+    // }
 
     // x derivatives (along length)
     {

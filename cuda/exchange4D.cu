@@ -79,7 +79,7 @@ addexchange4D(float* __restrict__ n, float* __restrict__ Bx,
     }
 
     float invMs = inv_Msat(Ms_, Ms_mul, I);
-    Bx[I] += B.x*invMs;
+    Bx[I] = B.x*invMs;
     Bx[I] -= 2.0*kappa*n[I]*invMs;
     return;
 }

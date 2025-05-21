@@ -39,6 +39,14 @@ func ShiftMagZ(dst, src *data.Slice, shiftZ int, clampL, clampR float32) {
 	k_shiftmagz_async(dst.DevPtr(0), dst.DevPtr(1), dst.DevPtr(2), src.DevPtr(0), src.DevPtr(1), src.DevPtr(2), N[X], N[Y], N[Z], shiftZ, clampL, clampR, cfg)
 }
 
+func ShiftMagZ4(dst, src *data.Slice, shiftZ int, clampL, clampR float32) {
+	util.Argument(dst.NComp() == src.NComp())
+	util.Assert(dst.Len() == src.Len())
+	N := dst.Size()
+	cfg := make3DConf(N)
+	k_shiftmagz4_async(dst.DevPtr(0), src.DevPtr(0), N[X], N[Y], N[Z], shiftZ, clampL, clampR, cfg)
+}
+
 // Like Shift, but for bytes
 func ShiftBytes(dst, src *Bytes, m *data.Mesh, shiftX int, clamp byte) {
 	N := m.Size()
