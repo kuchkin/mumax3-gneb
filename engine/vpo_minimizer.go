@@ -109,10 +109,8 @@ func (mini *VPOminimizer) Step() {
 	k04 := cuda.Buffer(1, size)
 	defer cuda.Recycle(k04)
 
-	vf1 := cuda.Buffer(1, size)
-	defer cuda.Recycle(vf1)
-	ff1 := cuda.Buffer(1, size)
-	defer cuda.Recycle(ff1)
+	ff := cuda.Buffer(1, size)
+	defer cuda.Recycle(ff)
 
 
 	////GNEB parameters
@@ -274,14 +272,14 @@ func (mini *VPOminimizer) Step() {
 				setForce(torque)
 			} else {
 				cuda.CrossProduct(m0, m, k)
-				cuda.AddDotProduct2(ff1, 1.0, m0, m0)
-				torque = 0.5 * (float32(math.Sqrt(float64(getReactionCoordinate(ff1, 0, noi)))) + float32(math.Sqrt(float64(getReactionCoordinate(ff1, noi-1, noi))))) / float32(m.Size()[X]*m.Size()[Y])
+				cuda.AddDotProduct2(ff, 1.0, m0, m0)
+				torque = 0.5 * (float32(math.Sqrt(float64(getReactionCoordinate(ff, 0, noi)))) + float32(math.Sqrt(float64(getReactionCoordinate(ff, noi-1, noi))))) / float32(m.Size()[X]*m.Size()[Y])
 				setForce(torque)
 			}
 		} else {
 			if Kappa>0{
-				cuda.AddDotProduct3(ff1, 1.0, m, n, k, k4)
-				torque = float32(math.Sqrt(float64(cuda.Dot(ff1, ff1)))) / float32(m.Size()[X]*m.Size()[Y]*m.Size()[Z])
+				cuda.AddDotProduct3(ff, 1.0, m, n, k, k4)
+				torque = float32(math.Sqrt(float64(cuda.Dot(ff, ff)))) / float32(m.Size()[X]*m.Size()[Y]*m.Size()[Z])
 				setForce(torque)
 			}else{
 				cuda.CrossProduct(m0, m, k)
@@ -293,8 +291,8 @@ func (mini *VPOminimizer) Step() {
 
 	} else {
 		if Kappa>0{
-			cuda.AddDotProduct3(ff1, 1.0, m, n, k, k4)
-			torque = float32(math.Sqrt(float64(cuda.Dot(ff1, ff1)))) / float32(m.Size()[X]*m.Size()[Y]*m.Size()[Z])
+			cuda.AddDotProduct3(ff, 1.0, m, n, k, k4)
+			torque = float32(math.Sqrt(float64(cuda.Dot(ff, ff)))) / float32(m.Size()[X]*m.Size()[Y]*m.Size()[Z])
 			setForce(torque)
 			// // cuda.CrossProduct(m0, m, k)
 			// torque = float32(math.Sqrt(float64(cuda.Dot(m0, m0)))) / float32(m.Size()[X]*m.Size()[Y]*m.Size()[Z])
@@ -350,45 +348,78 @@ func (mini *VPOminimizer) Step() {
 		cuda.Madd2(vel4, k04, k4, float32(1.0), float32(0.5*stepsize/mass))
 	}
 
-	cuda.AddDotProduct2(ff1, 1.0, vel,  k)
-	if Kappa > 0{	
-		cuda.AddDotProduct1(ff1, 1.0, vel4, k4)
-	}
-	vf := getReactionCoordinate(ff1, 0, noi) + getReactionCoordinate(ff1, noi-1, noi)
+	// cuda.AddDotProduct2(ff, 1.0, vel,  k)
+	// if Kappa > 0{	
+	// 	cuda.AddDotProduct1(ff, 1.0, vel4, k4)
+	// }
+	// vf1 := getReactionCoordinate(ff, 0, noi);
+	// vf2 := 0.0;
+	// vf3 := getReactionCoordinate(ff, noi-1, noi)
 	
 
-	cuda.AddDotProduct2(ff1, 1.0, k, k)
+	// cuda.AddDotProduct2(ff, 1.0, k, k)
+	// if Kappa > 0{
+	// 	cuda.AddDotProduct1(ff, 1.0, k4, k4)
+	// }
+	// ff1 := getReactionCoordinate(ff, 0, noi);
+	// ff2 := 0.0;
+	// ff3 := getReactionCoordinate(ff, noi-1, noi)
+
+	// if MinimizeEndPoints == 1 {
+	// 	vf1 = vf1 / ff1
+	// 	vf3 = vf3 / ff3
+	// } else {
+	// 	if Kappa > 0{
+	// 		vf2 = cuda.Dot(vel, k) + cuda.Dot(vel4, k4) - vf1 - vf3
+	// 		ff2 = cuda.Dot(k, k)   + cuda.Dot(k4, k4) 	- ff1 - ff3
+	// 	}else{
+	// 		vf2 = cuda.Dot(vel, k) - vf1 - vf3
+	// 		ff2 = cuda.Dot(k, k)   - ff1 - ff3
+	// 	}
+	// 	if noi == 1{
+	// 		vf2 += vf3
+	// 		ff2 += vf3
+	// 	}
+	// 	vf = vf2 / ff2
+	// }
+
+	// if vf1 <= 0 {
+	// 	vf1 = float32(0.0)
+	// }
+	// if vf2 <= 0 {
+	// 	vf2 = float32(0.0)
+	// }
+	// if vf3 <= 0 {
+	// 	vf3 = float32(0.0)
+	// }
+	// if NSteps == 0 {
+	// 	vf1 = 0.0
+	// 	vf2 = 0.0
+	// 	vf3 = 0.0
+	// }
+
+	vf1 := cuda.Dot(vel, k); ff1 := float32(0.0)
 	if Kappa > 0{
-		cuda.AddDotProduct1(ff1, 1.0, k4, k4)
+		vf1 += cuda.Dot(vel4, k4);
 	}
-	ff := getReactionCoordinate(ff1, 0, noi) + getReactionCoordinate(ff1, noi-1, noi)
-
-	if MinimizeEndPoints == 1 {
-		vf = vf / ff
-	} else {
+	if vf1 <= 0{
+		vf1 = float32(0.0)
+	}else{
+		ff1 = 1.0e-8 + cuda.Dot(k, k);
 		if Kappa > 0{
-			vf = cuda.Dot(vel, k) + cuda.Dot(vel4, k4)
-			ff = cuda.Dot(k, k)   + cuda.Dot(k4, k4)
-		}else{
-			vf = cuda.Dot(vel, k)
-			ff = cuda.Dot(k, k) 
+			ff1 += cuda.Dot(k4, k4);
 		}
-		vf = vf / ff
+		vf1 = vf1/ff1
 	}
-
-	if vf <= 0 {
-		vf = float32(0.0)
-	}
-	if NSteps == 0 {
-		vf = 0.0
-	}
-
 	
 	///Having velocity in the tangent space we can get the search direction
-	cuda.Madd2(k0, k, k, vf, float32(0.5*stepsize/mass))
-	if Kappa > 0{
-		cuda.Madd2(k04, k4, k4, vf, float32(0.5*stepsize/mass))
-	}
+	// cuda.Madd2(k0, k, k, vf, float32(0.5*stepsize/mass))
+	// if Kappa > 0{
+	// 	cuda.Madd2(k04, k4, k4, vf, float32(0.5*stepsize/mass))
+	// }
+
+	vf1 += float32(0.5*stepsize/mass);
+	
 
 	// save the magnetization
 	data.Copy(m0, m)
@@ -399,15 +430,15 @@ func (mini *VPOminimizer) Step() {
 
 	//and perform one VPO step
 	if Kappa > 0{
-		cuda.VPOminimize4D(m, n, k0, k04, regions.Gpu(), float32(stepsize), MinimizeEndPoints, noi)
+		cuda.VPOminimize4D(m, n, k, k4, regions.Gpu(), float32(stepsize), vf1, MinimizeEndPoints, noi)
 	}else{
-		cuda.VPOminimize(m, k0, regions.Gpu(), float32(stepsize), MinimizeEndPoints, noi)
+		cuda.VPOminimize(m, k, regions.Gpu(), float32(stepsize), vf1, MinimizeEndPoints, noi)
 	}
 	//now we project k0 onto the tangent of new magnetization
 	if Kappa > 0{
-		cuda.Velocity4D(vel, vel4, k0, k04, m, n, m0, n0)
+		cuda.Velocity4D(vel, vel4, k, k4, m, n, m0, n0)
 	}else{
-		cuda.Velocity(vel, k0, m, m0)
+		cuda.Velocity(vel, k, m, m0)
 	}
 	
 	
