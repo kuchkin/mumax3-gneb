@@ -148,19 +148,25 @@ func (mini *VPOminimizer) Step() {
 			Energy[i] = -0.5 * coef * getReactionCoordinate(en, i, noi) 
 		}
 
-		if Kappa > 0{
-			cuda.AddDotProduct3(en, 1.0, m, n, k, k4)
-			for i := 0; i < (noi); i++ {
-				MaxTorq[i] = getReactionCoordinate(en, i, noi)
-				MaxTorq[i] = MaxTorq[i]*MaxTorq[i]
-			}
-		}else{
-			cuda.CrossProduct(k0, m, k)
+		// if Kappa > 0{
+		// 	cuda.AddDotProduct3(en, 1.0, m, n, k, k4)
+		// 	for i := 0; i < (noi); i++ {
+		// 		MaxTorq[i] = getReactionCoordinate(en, i, noi)
+		// 		// MaxTorq[i] = MaxTorq[i]*MaxTorq[i]
+		// 	}
+		// }else{
+		// 	cuda.CrossProduct(k0, m, k)
+		// 	cuda.AddDotProduct2(en, 1.0, k0, k0)
+		// 	for i := 0; i < (noi); i++ {
+		// 		MaxTorq[i] = getReactionCoordinate(en, i, noi)
+		// 	}
+		// }
+
+		cuda.CrossProduct(k0, m, k)
 			cuda.AddDotProduct2(en, 1.0, k0, k0)
 			for i := 0; i < (noi); i++ {
 				MaxTorq[i] = getReactionCoordinate(en, i, noi)
 			}
-		}
 		
 		
 
