@@ -57,6 +57,9 @@ vpo4D(float* __restrict__ mx,  float* __restrict__  my,  float* __restrict__ mz,
 
         pref *= dt;
 
+        if((((i/(N/Nz))/(Nz/noi)) == 0 ) || (((i/(N/Nz))/(Nz/noi)) == (noi-1) )){
+            theta = 0.0; pref *= dt;
+        }
         
         m = m*cos(theta) + B*pref;
         float m4 = mw[i]*cos(theta) + Bw[i]*pref;
