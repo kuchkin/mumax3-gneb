@@ -73,8 +73,12 @@ func (mini *VPOminimizer) Step() {
 	//if we do RGNEB
 	if Kappa>0 && mini.k4 == nil{
 		//initialize nu_4
-		M.random(n)
-		M.normalize4D(n)
+		// temp := cuda.Dot(n,n);
+		// if temp <= 0{
+			M.random(n)
+			M.normalize4D(n)
+		// }
+		
 
 		//calculate effective field assoc with nu_4 for the first time
 		mini.k4 = cuda.Buffer(1, size)
@@ -348,44 +352,41 @@ func (mini *VPOminimizer) Step() {
 		cuda.Madd2(vel4, k04, k4, float32(1.0), float32(0.5*stepsize/mass))
 	}
 
-	// cuda.AddDotProduct2(ff, 1.0, vel,  k)
-	// if Kappa > 0{	
-	// 	cuda.AddDotProduct1(ff, 1.0, vel4, k4)
-	// }
+	cuda.AddDotProduct2(ff, 1.0, vel,  k)
+	if Kappa > 0{	
+		cuda.AddDotProduct1(ff, 1.0, vel4, k4)
+	}
+	vf := getReactionCoordinate(ff, 0, noi) + getReactionCoordinate(ff, noi-1, noi)
 	// vf1 := getReactionCoordinate(ff, 0, noi);
 	// vf2 := 0.0;
 	// vf3 := getReactionCoordinate(ff, noi-1, noi)
 	
 
-	// cuda.AddDotProduct2(ff, 1.0, k, k)
-	// if Kappa > 0{
-	// 	cuda.AddDotProduct1(ff, 1.0, k4, k4)
-	// }
+	cuda.AddDotProduct2(ff, 1.0, k, k)
+	if Kappa > 0{
+		cuda.AddDotProduct1(ff, 1.0, k4, k4)
+	}
+	fff := getReactionCoordinate(ff, 0, noi) + getReactionCoordinate(ff, noi-1, noi)
 	// ff1 := getReactionCoordinate(ff, 0, noi);
 	// ff2 := 0.0;
 	// ff3 := getReactionCoordinate(ff, noi-1, noi)
 
-	// if MinimizeEndPoints == 1 {
-	// 	vf1 = vf1 / ff1
-	// 	vf3 = vf3 / ff3
-	// } else {
-	// 	if Kappa > 0{
-	// 		vf2 = cuda.Dot(vel, k) + cuda.Dot(vel4, k4) - vf1 - vf3
-	// 		ff2 = cuda.Dot(k, k)   + cuda.Dot(k4, k4) 	- ff1 - ff3
-	// 	}else{
-	// 		vf2 = cuda.Dot(vel, k) - vf1 - vf3
-	// 		ff2 = cuda.Dot(k, k)   - ff1 - ff3
-	// 	}
-	// 	if noi == 1{
-	// 		vf2 += vf3
-	// 		ff2 += vf3
-	// 	}
-	// 	vf = vf2 / ff2
-	// }
+	if MinimizeEndPoints == 1 {
+		vf = vf / fff
+	} else {
+		if Kappa > 0{
+			vf  = cuda.Dot(vel, k) + cuda.Dot(vel4, k4)
+			fff = cuda.Dot(k, k)   + cuda.Dot(k4, k4)
+		}else{
+			vf = cuda.Dot(vel, k)
+			fff = cuda.Dot(k, k)
+		}
+		vf = vf / fff
+	}
 
-	// if vf1 <= 0 {
-	// 	vf1 = float32(0.0)
-	// }
+	if vf <= 0 {
+		vf = float32(0.0)
+	}
 	// if vf2 <= 0 {
 	// 	vf2 = float32(0.0)
 	// }
@@ -398,19 +399,33 @@ func (mini *VPOminimizer) Step() {
 	// 	vf3 = 0.0
 	// }
 
-	vf1 := cuda.Dot(vel, k); ff1 := float32(0.0)
-	if Kappa > 0{
-		vf1 += cuda.Dot(vel4, k4);
-	}
-	if vf1 <= 0{
-		vf1 = float32(0.0)
-	}else{
-		ff1 = 1.0e-8 + cuda.Dot(k, k);
-		if Kappa > 0{
-			ff1 += cuda.Dot(k4, k4);
-		}
-		vf1 = vf1/ff1
-	}
+	// vf1 := cuda.Dot(vel, k); ff1 := float32(0.0)
+	// cuda.AddDotProduct2(ff, 1.0, vel,  k)
+	// if Kappa > 0{	
+	// 	cuda.AddDotProduct1(ff, 1.0, vel4, k4)
+	// }
+	// vf_temp := getReactionCoordinate(ff, 0, noi) + getReactionCoordinate(ff, noi-1, noi);
+	// if Kappa > 0{
+	// 	vf1 += cuda.Dot(vel4, k4);
+	// }
+	// vf1 = vf1 - vf_temp;
+
+	// if vf1 <= 0{
+	// 	vf1 = float32(0.0)
+	// }else{
+	// 	ff1 = cuda.Dot(k, k);
+	// 	if Kappa > 0{
+	// 		ff1 += cuda.Dot(k4, k4);
+	// 	}
+	// 	cuda.AddDotProduct2(ff, 1.0, k,  k)
+	// 	if Kappa > 0{	
+	// 		cuda.AddDotProduct1(ff, 1.0, k4, k4)
+	// 	}
+	// 	vf_temp := getReactionCoordinate(ff, 0, noi) + getReactionCoordinate(ff, noi-1, noi);
+	// 	ff1 = ff1 - vf_temp;
+
+	// 	vf1 = vf1/ff1
+	// }
 	
 	///Having velocity in the tangent space we can get the search direction
 	// cuda.Madd2(k0, k, k, vf, float32(0.5*stepsize/mass))
@@ -418,7 +433,7 @@ func (mini *VPOminimizer) Step() {
 	// 	cuda.Madd2(k04, k4, k4, vf, float32(0.5*stepsize/mass))
 	// }
 
-	vf1 += float32(0.5*stepsize/mass);
+	vf += float32(0.5*stepsize/mass);
 	
 
 	// save the magnetization
@@ -430,9 +445,9 @@ func (mini *VPOminimizer) Step() {
 
 	//and perform one VPO step
 	if Kappa > 0{
-		cuda.VPOminimize4D(m, n, k, k4, regions.Gpu(), float32(stepsize), vf1, MinimizeEndPoints, noi)
+		cuda.VPOminimize4D(m, n, k, k4, regions.Gpu(), float32(stepsize), vf, MinimizeEndPoints, noi)
 	}else{
-		cuda.VPOminimize(m, k, regions.Gpu(), float32(stepsize), vf1, MinimizeEndPoints, noi)
+		cuda.VPOminimize(m, k, regions.Gpu(), float32(stepsize), vf, MinimizeEndPoints, noi)
 	}
 	//now we project k0 onto the tangent of new magnetization
 	if Kappa > 0{
