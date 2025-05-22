@@ -7,13 +7,24 @@
 extern "C" __global__ void
 vpo4D(float* __restrict__ mx,  float* __restrict__  my,  float* __restrict__ mz, float* __restrict__ mw,
          float* __restrict__ Bx,  float* __restrict__  By,  float* __restrict__ Bz, float* __restrict__  Bw,
-         uint8_t* regions, float dt, int minend, int noi, int N, int Nz) {
+         uint8_t* regions, float dt,float vf, int minend, int noi, int N, int Nz) {
 
     int i =  ( blockIdx.y*gridDim.x + blockIdx.x ) * blockDim.x + threadIdx.x;
     // bool pp = true;
     
     if (i < N) {
 
+        //search direction
+        // float vf = 0.0;
+        // if((((i/(N/Nz))/(Nz/noi)) == 0 )){
+        //     vf = vf1; //first image
+        // }else if((((i/(N/Nz))/(Nz/noi)) == (noi-1) )){
+        //     vf = vf3; //last image
+        // }else{
+        //     vf = vf2; //intermadiate images
+        // }
+
+        Bx[i] = Bx[i]*vf; By[i] = By[i]*vf; Bz[i] = Bz[i]*vf; Bw[i] = Bw[i]*vf;
 
         float3 m = {mx[i], my[i], mz[i]};
         float3 B = {Bx[i], By[i], Bz[i]};
