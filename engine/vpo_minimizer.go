@@ -73,11 +73,11 @@ func (mini *VPOminimizer) Step() {
 	//if we do RGNEB
 	if Kappa>0 && mini.k4 == nil{
 		//initialize nu_4
-		// temp := cuda.Dot(n,n);
-		// if temp <= 0{
+		temp := cuda.Dot(n,n);
+		if temp <= 0{
 			M.random(n)
 			M.normalize4D(n)
-		// }
+		}
 		
 
 		//calculate effective field assoc with nu_4 for the first time
@@ -262,7 +262,6 @@ func (mini *VPOminimizer) Step() {
 					(*C.float)(unsafe.Pointer(&Distance[0])),
 					(*C.float)(unsafe.Pointer(&Energy[0])),
 					(*C.float)(unsafe.Pointer(&MaxTorq[0])), C.CString(OD()+"table.txt"))
-
 		}
 
 	}
