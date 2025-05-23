@@ -507,28 +507,35 @@ func readOVFGNEB4(in1, in2 io.Reader, array *data.Slice, noi, sl int) {
 				m1 := data[1][q][iy][ix]
 				m2 := data[2][q][iy][ix]
 
-				c0 := n1*m2 - n2*m1
-				c1 := n2*m0 - n0*m2
-				c2 := n0*m1 - n1*m0
-				dc := math.Sqrt(float64(c0*c0 + c1*c1 + c2*c2))
-				dab := float64(n0*m0 + n1*m1 + n2*m2)
+				// c0 := n1*m2 - n2*m1
+				// c1 := n2*m0 - n0*m2
+				// c2 := n0*m1 - n1*m0
+				// dc := math.Sqrt(float64(c0*c0 + c1*c1 + c2*c2))
+				// dab := float64(n0*m0 + n1*m1 + n2*m2)
 
-				Th := math.Atan2(dc, dab)
-				p := iz / (size[Z] / noi)
-				th := Th * float64(p) / float64(noi-1.0)
-				pref := float32(math.Sin(th) / math.Sin(Th))
-				if dc < 1.0e-5 {
-					Th = 0.0
-					pref = 0.0
-				}
+				// Th := math.Atan2(dc, dab)
+				// p := iz / (size[Z] / noi)
+				// th := Th * float64(p) / float64(noi-1.0)
+				// pref := float32(math.Sin(th) / math.Sin(Th))
+				// if dc < 1.0e-5 {
+				// 	Th = 0.0
+				// 	pref = 0.0
+				// }
 
-				b0 := c1*n2 - c2*n1
-				b1 := c2*n0 - c0*n2
-				b2 := c0*n1 - c1*n0
+				// b0 := c1*n2 - c2*n1
+				// b1 := c2*n0 - c0*n2
+				// b2 := c0*n1 - c1*n0
 
-				data[0][iz][iy][ix] = n0*float32(math.Cos(th)) + b0*pref
-				data[1][iz][iy][ix] = n1*float32(math.Cos(th)) + b1*pref
-				data[2][iz][iy][ix] = n2*float32(math.Cos(th)) + b2*pref
+				// data[0][iz][iy][ix] = n0*float32(math.Cos(th)) + b0*pref
+				// data[1][iz][iy][ix] = n1*float32(math.Cos(th)) + b1*pref
+				// data[2][iz][iy][ix] = n2*float32(math.Cos(th)) + b2*pref
+
+				pref := float32(iz / (size[Z] / noi)) / float32(noi-1.0);
+
+				data[0][iz][iy][ix] = n0*(1.0-pref) + m0*pref
+				data[1][iz][iy][ix] = n1*(1.0-pref) + m1*pref
+				data[2][iz][iy][ix] = n2*(1.0-pref) + m2*pref
+
 
 			}
 		}
