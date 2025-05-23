@@ -12,3 +12,10 @@ func Random4D(vec, vol, vec4 *data.Slice) {
 	cfg := make1DConf(N)
 	k_random4D_async(vec.DevPtr(X), vec.DevPtr(Y), vec.DevPtr(Z), vol.DevPtr(0),vec4.DevPtr(X), N, cfg)
 }
+
+func Sqrt4D(vec, vol, vec4 *data.Slice) {
+	util.Argument(vol == nil || vol.NComp() == 1)
+	N := vec.Len()
+	cfg := make1DConf(N)
+	k_sqrt4D_async(vec.DevPtr(X), vec.DevPtr(Y), vec.DevPtr(Z), vol.DevPtr(0),vec4.DevPtr(X), N, cfg)
+}

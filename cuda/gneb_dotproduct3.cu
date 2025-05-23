@@ -16,6 +16,6 @@ dotproduct3(float* __restrict__ dst, float prefactor,
         float tz = bz[i] - ab*az[i];
         float tw = bw[i] - ab*aw[i];
 
-        dst[i] = prefactor * sqrt(tx*tx+ty*ty+tz*tz+tw*tw);
+        dst[i] = prefactor * (tx*tx+ty*ty+tz*tz+tw*tw);
     }
 }
