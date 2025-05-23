@@ -150,25 +150,25 @@ func (mini *VPOminimizer) Step() {
 			Energy[i] = -0.5 * coef * getReactionCoordinate(en, i, noi) 
 		}
 
-		// if Kappa > 0{
-		// 	cuda.AddDotProduct3(en, 1.0, m, n, k, k4)
-		// 	for i := 0; i < (noi); i++ {
-		// 		MaxTorq[i] = getReactionCoordinate(en, i, noi)
-		// 		// MaxTorq[i] = MaxTorq[i]*MaxTorq[i]
-		// 	}
-		// }else{
-		// 	cuda.CrossProduct(k0, m, k)
-		// 	cuda.AddDotProduct2(en, 1.0, k0, k0)
-		// 	for i := 0; i < (noi); i++ {
-		// 		MaxTorq[i] = getReactionCoordinate(en, i, noi)
-		// 	}
-		// }
-
-		cuda.CrossProduct(k0, m, k)
+		if Kappa > 0{
+			cuda.AddDotProduct3(en, 1.0, m, n, k, k4)
+			for i := 0; i < (noi); i++ {
+				MaxTorq[i] = getReactionCoordinate(en, i, noi)
+				// MaxTorq[i] = MaxTorq[i]*MaxTorq[i]
+			}
+		}else{
+			cuda.CrossProduct(k0, m, k)
 			cuda.AddDotProduct2(en, 1.0, k0, k0)
 			for i := 0; i < (noi); i++ {
 				MaxTorq[i] = getReactionCoordinate(en, i, noi)
 			}
+		}
+
+		// cuda.CrossProduct(k0, m, k)
+		// 	cuda.AddDotProduct2(en, 1.0, k0, k0)
+		// 	for i := 0; i < (noi); i++ {
+		// 		MaxTorq[i] = getReactionCoordinate(en, i, noi)
+		// 	}
 		
 		
 
@@ -283,7 +283,7 @@ func (mini *VPOminimizer) Step() {
 		} else {
 			if Kappa>0{
 				cuda.AddDotProduct3(ff, 1.0, m, n, k, k4)
-				torque = float32(math.Sqrt(float64(cuda.Dot(ff, ff)))) / float32(m.Size()[X]*m.Size()[Y]*m.Size()[Z])
+				torque = float32(math.Sqrt(float64(cuda.Sum(ff)))) / float32(m.Size()[X]*m.Size()[Y]*m.Size()[Z])
 				setForce(torque)
 			}else{
 				cuda.CrossProduct(m0, m, k)
@@ -296,7 +296,7 @@ func (mini *VPOminimizer) Step() {
 	} else {
 		if Kappa>0{
 			cuda.AddDotProduct3(ff, 1.0, m, n, k, k4)
-			torque = float32(math.Sqrt(float64(cuda.Dot(ff, ff)))) / float32(m.Size()[X]*m.Size()[Y]*m.Size()[Z])
+			torque = float32(math.Sqrt(float64(cuda.Sum(ff)))) / float32(m.Size()[X]*m.Size()[Y]*m.Size()[Z])
 			setForce(torque)
 			// // cuda.CrossProduct(m0, m, k)
 			// torque = float32(math.Sqrt(float64(cuda.Dot(m0, m0)))) / float32(m.Size()[X]*m.Size()[Y]*m.Size()[Z])

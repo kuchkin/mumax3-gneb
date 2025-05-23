@@ -33,6 +33,7 @@ func (m *magnetization) Average() data.Vector    { return unslice(m.average()) }
 func (m *magnetization) normalize()              { cuda.Normalize(m.Buffer(), geometry.Gpu()) }
 func (m *magnetization) normalize4D(n *data.Slice) { cuda.Normalize4D(m.Buffer(), geometry.Gpu(), n) }
 func (m *magnetization) random(n *data.Slice) 	{ cuda.Random4D(m.Buffer(), geometry.Gpu(), n) }
+func (m *magnetization) sqrt4D(n *data.Slice) 	{ cuda.Sqrt4D(m.Buffer(), geometry.Gpu(), n) }
 
 // allocate storage (not done by init, as mesh size may not yet be known then)
 func (m *magnetization) alloc() {
