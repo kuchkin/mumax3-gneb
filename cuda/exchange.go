@@ -11,7 +11,7 @@ import (
 // 	B: effective field in Tesla
 // 	Aex_red: Aex / (Msat * 1e18 m2)
 // see exchange.cu
-func AddExchange(B, m *data.Slice, Aex_red SymmLUT, Msat MSlice, regions *Bytes, mesh *data.Mesh, JZ float32) {
+func AddExchange(B, m *data.Slice, Aex_red SymmLUT, Msat MSlice, regions *Bytes, mesh *data.Mesh, JZ, J1, J2, J3, J4 float32) {
 	c := mesh.CellSize()
 	wx := float32(2 / (c[X] * c[X]))
 	wy := float32(2 / (c[Y] * c[Y]))
@@ -21,8 +21,13 @@ func AddExchange(B, m *data.Slice, Aex_red SymmLUT, Msat MSlice, regions *Bytes,
 	cfg := make3DConf(N)
 	noi := mesh.NumberOfImages()
 	gneb := mesh.GNEB_code()
-
-	if gneb == 1 || gneb == 2 {
+	if J1*J1 > 0 || J2*J2 > 0 || J3*J3 > 0 || J4*J4 > 0{
+		k_addexchange_frustrated_async(B.DevPtr(X), B.DevPtr(Y), B.DevPtr(Z),
+			m.DevPtr(X), m.DevPtr(Y), m.DevPtr(Z),
+			Msat.DevPtr(0), Msat.Mul(0),
+			unsafe.Pointer(Aex_red), regions.Ptr,
+			wx, wy, wz, N[X], N[Y], N[Z], pbc, J1, J2, J3, J4, cfg)
+	}else if gneb == 1 || gneb == 2 {
 		k_gneb_addexchange_async(B.DevPtr(X), B.DevPtr(Y), B.DevPtr(Z),
 			m.DevPtr(X), m.DevPtr(Y), m.DevPtr(Z),
 			Msat.DevPtr(0), Msat.Mul(0),

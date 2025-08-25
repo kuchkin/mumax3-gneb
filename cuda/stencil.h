@@ -5,6 +5,8 @@
 #define index(ix,iy,iz,Nx,Ny,Nz) ( ( (iz)*(Ny) + (iy) ) * (Nx) + (ix) )
 #define idx(ix,iy,iz) ( index((ix),(iy),(iz),(Nx),(Ny),(Nz)) )
 
+#define indexPBC(i, j, k, Nx, Ny, Nz) ((((i) + (Nx)) % (Nx)) + (((j) + (Ny)) % (Ny)) * (Nx) + (((k) + (Nz)) % (Nz)) * (Nx) * (Ny))
+
 
 // modulo used for PBC wrap around
 #define MOD(n, M) ( (( (n) % (M) ) + (M) ) % (M)  )
