@@ -33,6 +33,10 @@ var (
 	// GNEB2D = false
 	// GNEB3D = false
 	JZ = 1.0
+	J1_frustr = 0.0
+	J2_frustr = 0.0
+	J3_frustr = 0.0
+	J4_frustr = 0.0
 	// NumOfImages = NewScalarParam("NumOfImages", "dimless", "Number of Images", &NumOfImages)
 	// NumOfImages   exchParam // number of images
 	Kappa = 0.0
@@ -51,6 +55,10 @@ func init() {
 	// DeclVar("GNEB2D", &GNEB2D, "GNEB?")
 	// DeclVar("GNEB3D", &GNEB3D, "GNEB?")
 	DeclVar("JZ", &JZ, "JZ")
+	DeclVar("J1_frustr", &J1_frustr, "J1_frustr")
+	DeclVar("J2_frustr", &J2_frustr, "J2_frustr")
+	DeclVar("J3_frustr", &J3_frustr, "J3_frustr")
+	DeclVar("J4_frustr", &J4_frustr, "J4_frustr")
 	lex2.init(Aex)
 	din2.init(Dind)
 	dbulk2.init(Dbulk)
@@ -64,7 +72,7 @@ func AddExchangeField(dst *data.Slice) {
 	defer ms.Recycle()
 	switch {
 	case !inter && !bulk:
-		cuda.AddExchange(dst, M.Buffer(), lex2.Gpu(), ms, regions.Gpu(), M.Mesh(), float32(JZ))
+		cuda.AddExchange(dst, M.Buffer(), lex2.Gpu(), ms, regions.Gpu(), M.Mesh(), float32(JZ), float32(J1_frustr), float32(J2_frustr), float32(J3_frustr), float32(J4_frustr))
 	case inter && !bulk:
 		Refer("mulkers2017")
 		cuda.AddDMI(dst, M.Buffer(), lex2.Gpu(), din2.Gpu(), ms, regions.Gpu(), M.Mesh(), OpenBC) // dmi+exchange
@@ -209,10 +217,15 @@ func symmidx(i, j int) int {
 func exchAverage(exi, exj float32) float32 {
 
 	if exi*exj >= 0.0 {
-		if exi == 0 || exj == 0 {
-			return 0
+		// if exi == 0 || exj == 0 {
+		// 	return 0
+		// } else {
+		// 	return 2 / (1/exi + 1/exj)
+		// }
+		if exi*exj > 0 {
+			return 2.*exi*exj / (exi + exj)
 		} else {
-			return 2 / (1/exi + 1/exj)
+			return 0
 		}
 		// 		return 2.*exi*exj / (exi + exj)
 		// return 0.5*(exi + exj)
