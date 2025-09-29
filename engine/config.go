@@ -14,6 +14,8 @@ func init() {
 	DeclFunc("Antivortex", AntiVortex, "Antivortex magnetization with given circulation and core polarization")
 	DeclFunc("NeelSkyrmion", NeelSkyrmion, "Néél skyrmion magnetization with given charge and core polarization")
 	DeclFunc("BlochSkyrmion", BlochSkyrmion, "Bloch skyrmion magnetization with given chirality and core polarization")
+	DeclFunc("Hopfion", Hopfion, "Hopfion magnetization with given size")
+	DeclFunc("BlochAntiSkyrmion", BlochAntiSkyrmion, "Bloch antiskyrmion magnetization with given chirality and core polarization")
 	DeclFunc("TwoDomain", TwoDomain, "Twodomain magnetization with with given magnetization in left domain, wall, and right domain")
 	DeclFunc("VortexWall", VortexWall, "Vortex wall magnetization with given mx in left and right domain and core circulation and polarization")
 	DeclFunc("RandomMag", RandomMag, "Random magnetization")
@@ -93,6 +95,33 @@ func BlochSkyrmion(charge, pol int) Config {
 		mz := 2 * float64(pol) * (math.Exp(-r2/w2) - 0.5)
 		mx := (-y * float64(charge) / r) * (1 - math.Abs(mz))
 		my := (x * float64(charge) / r) * (1 - math.Abs(mz))
+		return noNaN(data.Vector{mx, my, mz}, pol)
+	}
+}
+
+func Hopfion(sc float64) Config {
+	w := Mesh().CellSize()[X]
+	
+	return func(x, y, z float64) data.Vector {
+		r2 := math.Sqrt(x*x + y*y + z*z + 1e-8)
+		G := 3.1415*math.Exp(-sc*r2/w);
+    	mx :=  2.0*x*z*math.Sin(G)*math.Sin(G)/(r2*r2) + y*math.Sin(2*G)/r2;
+    	my := -2.0*z*y*math.Sin(G)*math.Sin(G)/(r2*r2) + x*math.Sin(2*G)/r2;
+    	mz :=  2.0*z*z*math.Sin(G)*math.Sin(G)/(r2*r2) + r2*math.Cos(2*G)/r2;
+		
+		return noNaN(data.Vector{mx, my, mz}, 1)
+	}
+}
+
+func BlochAntiSkyrmion(charge, pol int) Config {
+	w := 8 * Mesh().CellSize()[X]
+	w2 := w * w
+	return func(x, y, z float64) data.Vector {
+		r2 := x*x + y*y
+		r := math.Sqrt(r2)
+		mz := 2 * float64(pol) * (math.Exp(-r2/w2) - 0.5)
+		mx := (-y * float64(charge) / r) * (1 - math.Abs(mz))
+		my := (-x * float64(charge) / r) * (1 - math.Abs(mz))
 		return noNaN(data.Vector{mx, my, mz}, pol)
 	}
 }
