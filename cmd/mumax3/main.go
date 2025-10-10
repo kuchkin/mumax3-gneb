@@ -171,4 +171,11 @@ func printVersion() {
 	engine.LogOut("  If you use mumax in any work or publication,                      //")
 	engine.LogOut("  we kindly ask you to cite the references in references.bib        //")
 	engine.LogOut("********************************************************************//")
+	engine.LogOut("If you use the GNEB method, please cite:                            //")	
+	engine.LogOut("        https://doi.org/10.1103/pr2y-dfbd                           //")
+	engine.LogOut("If you use the regularized GNEB method, please cite:                //")	
+	engine.LogOut("        https://doi.org/10.1103/PhysRevB.111.174410                 //")	
+	engine.LogOut("If you use the regularized LLG dynamics, please cite:               //")	
+	engine.LogOut("        https://doi.org/10.48550/arXiv.2508.19784                   //")
+	engine.LogOut("********************************************************************//")
 }
