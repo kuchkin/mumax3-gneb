@@ -8,12 +8,12 @@ random4D(float* __restrict__ vx, float* __restrict__ vy, float* __restrict__ vz,
     if (i < N) {
 
         // float v = (vol == NULL? 1.0f: vol[i]);
-        // float3 V = {v*vx[i], v*vy[i], v*vz[i]};
-        // float norm = v/sqrt(V.x*V.x+V.y*V.y+V.z*V.z+v4[i]*v4[i]);
+        float3 V = {vx[i], vy[i], vz[i]};
+        float norm = sqrt(V.x*V.x+V.y*V.y+V.z*V.z);
         // vx[i] *= norm;
         // vy[i] *= norm;
         // vz[i] *= norm;
-        v4[i] = 0.1*vx[i];
+        v4[i] = 0.001 + 1.0 - norm*norm;
     }
 }
 
