@@ -33,6 +33,7 @@ func init() {
 	DeclFunc("Const", Const, "Constant, uniform number")
 	DeclFunc("ConstVector", ConstVector, "Constant, uniform vector")
 	DeclFunc("Shifted", Shifted, "Shifted quantity")
+	DeclFunc("Flipped", Flipped, "Flipped quantity")
 	DeclFunc("Masked", Masked, "Mask quantity with shape")
 	DeclFunc("Normalized", Normalized, "Normalize quantity")
 	DeclFunc("RemoveCustomFields", RemoveCustomFields, "Removes all custom fields again")
@@ -382,6 +383,31 @@ func (q *shifted) EvalTo(dst *data.Slice) {
 }
 
 func (q *shifted) NComp() int {
+	return q.orig.NComp()
+}
+
+
+type flipped struct {
+	orig       Quantity
+}
+
+// Flipped returns a new Quantity that has flipped 
+// 3D chess spins (AFM).
+func Flipped(q Quantity) Quantity {
+	return &flipped{q}
+}
+
+func (q *flipped) EvalTo(dst *data.Slice) {
+	orig := ValueOf(q.orig)
+	defer cuda.Recycle(orig)
+	for i := 0; i < q.NComp(); i++ {
+		dsti := dst.Comp(i)
+		origi := orig.Comp(i)
+		cuda.Flip(dsti, origi)
+	}
+}
+
+func (q *flipped) NComp() int {
 	return q.orig.NComp()
 }
 
