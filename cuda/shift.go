@@ -31,6 +31,14 @@ func ShiftZ(dst, src *data.Slice, shiftZ int, clampL, clampR float32) {
 	k_shiftz_async(dst.DevPtr(0), src.DevPtr(0), N[X], N[Y], N[Z], shiftZ, clampL, clampR, cfg)
 }
 
+func Flip(dst, src *data.Slice) {
+	util.Argument(dst.NComp() == 1 && src.NComp() == 1)
+	util.Assert(dst.Len() == src.Len())
+	N := dst.Size()
+	cfg := make3DConf(N)
+	k_flip_async(dst.DevPtr(0), src.DevPtr(0), N[X], N[Y], N[Z], cfg)
+}
+
 func ShiftMagZ(dst, src *data.Slice, shiftZ int, clampL, clampR float32) {
 	util.Argument(dst.NComp() == src.NComp())
 	util.Assert(dst.Len() == src.Len())
