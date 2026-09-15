@@ -11,6 +11,7 @@ adduniaxialanisotropy2(float* __restrict__  Bx, float* __restrict__  By, float* 
                        float* __restrict__ Ms_, float Ms_mul,
                        float* __restrict__ K1_, float K1_mul,
                        float* __restrict__ K2_, float K2_mul,
+                       float* __restrict__ K3_, float K3_mul,
                        float* __restrict__ ux_, float ux_mul,
                        float* __restrict__ uy_, float uy_mul,
                        float* __restrict__ uz_, float uz_mul,
@@ -23,13 +24,15 @@ adduniaxialanisotropy2(float* __restrict__  Bx, float* __restrict__  By, float* 
         float invMs = inv_Msat(Ms_, Ms_mul, i);
         float  K1  = amul(K1_, K1_mul, i) * invMs;
         float  K2  = amul(K2_, K2_mul, i) * invMs;
+        float  K3  = amul(K3_, K3_mul, i) * invMs;
         float3 m   = {mx[i], my[i], mz[i]};
 
         float  mu  = dot(m, u);
         float3 Ba  = 2.0f*K1*    (mu)*u+
                      4.0f*K2*pow3(mu)*u;
 
-
+        Ba.x += 4.0f*K3*(m.x*m.x - 3.0f*m.y*m.y)*m.x;
+        Ba.y += 4.0f*K3*(m.y*m.y - 3.0f*m.x*m.x)*m.y;
    
        
         Bx[i] += Ba.x;
