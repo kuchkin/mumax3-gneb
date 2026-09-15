@@ -137,7 +137,11 @@ func (mini *VPOminimizer) Step() {
 		en := cuda.Buffer(1, size)
 		defer cuda.Recycle(en)
 
-		data.Copy(k0, k)
+		cuda.Zero(k0)
+		addUniaxialAnisotropyFrom(k0, M, Msat, sZero, Ku2, Ku3, AnisU)
+		cuda.Madd2(k0, k0, k, float32(-0.5), float32(1.0))
+
+		// data.Copy(k0, k)
 		B_ext.AddTo(k0)
 
 		cuda.AddDotProduct2(en, 1.0, k0, m)
