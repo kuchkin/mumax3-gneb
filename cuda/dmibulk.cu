@@ -35,7 +35,8 @@ adddmibulk(float* __restrict__ Hx, float* __restrict__ Hy, float* __restrict__ H
            float* __restrict__ Ms_, float Ms_mul,
            float* __restrict__ aLUT2d, float* __restrict__ DLUT2d,
            uint8_t* __restrict__ regions,
-           float cx, float cy, float cz, int Nx, int Ny, int Nz, uint8_t PBC, uint8_t OpenBC) {
+           float cx, float cy, float cz, float Dbx, float Dby, float Dbz,
+           int Nx, int Ny, int Nz, uint8_t PBC, uint8_t OpenBC) {
 
     int ix = blockIdx.x * blockDim.x + threadIdx.x;
     int iy = blockIdx.y * blockDim.y + threadIdx.y;
@@ -64,7 +65,7 @@ adddmibulk(float* __restrict__ Hx, float* __restrict__ Hy, float* __restrict__ H
         }
         int r1 = is0(m1)? r0 : regions[i_];
         float A = aLUT2d[symidx(r0, r1)];
-        float D = DLUT2d[symidx(r0, r1)];
+        float D = Dbx*DLUT2d[symidx(r0, r1)];
         float D_2A = D/(2.0f*A);
         if (!is0(m1) || !OpenBC){                      // do nothing at an open boundary
             if (is0(m1)) {                             // neighbor missing
@@ -87,7 +88,7 @@ adddmibulk(float* __restrict__ Hx, float* __restrict__ Hy, float* __restrict__ H
         }
         int r1 = is0(m2)? r0 : regions[i_];
         float A = aLUT2d[symidx(r0, r1)];
-        float D = DLUT2d[symidx(r0, r1)];
+        float D = Dbx*DLUT2d[symidx(r0, r1)];
         float D_2A = D/(2.0f*A);
         if (!is0(m2) || !OpenBC){
             if (is0(m2)) {
@@ -110,7 +111,7 @@ adddmibulk(float* __restrict__ Hx, float* __restrict__ Hy, float* __restrict__ H
         }
         int r1 = is0(m1)? r0 : regions[i_];
         float A = aLUT2d[symidx(r0, r1)];
-        float D = DLUT2d[symidx(r0, r1)];
+        float D = Dby*DLUT2d[symidx(r0, r1)];
         float D_2A = D/(2.0f*A);
         if (!is0(m1) || !OpenBC){
             if (is0(m1)) {
@@ -133,7 +134,7 @@ adddmibulk(float* __restrict__ Hx, float* __restrict__ Hy, float* __restrict__ H
         int r1 = is0(m2)? r0 : regions[i_];
         float A = aLUT2d[symidx(r0, r1)];
         float D = DLUT2d[symidx(r0, r1)];
-        float D_2A = D/(2.0f*A);
+        float D_2A = Dby*D/(2.0f*A);
         if (!is0(m2) || !OpenBC){
             if (is0(m2)) {
                 m2.x = m0.x + (+cy * D_2A * m0.z);
@@ -157,7 +158,7 @@ adddmibulk(float* __restrict__ Hx, float* __restrict__ Hy, float* __restrict__ H
             }
             int r1 = is0(m1)? r0 : regions[i_];
             float A = aLUT2d[symidx(r0, r1)];
-            float D = DLUT2d[symidx(r0, r1)];
+            float D = Dbz*DLUT2d[symidx(r0, r1)];
             float D_2A = D/(2.0f*A);
             if (!is0(m1) || !OpenBC){
                 if (is0(m1)) {
@@ -180,7 +181,7 @@ adddmibulk(float* __restrict__ Hx, float* __restrict__ Hy, float* __restrict__ H
             }
             int r1 = is0(m2)? r0 : regions[i_];
             float A = aLUT2d[symidx(r0, r1)];
-            float D = DLUT2d[symidx(r0, r1)];
+            float D = Dbz*DLUT2d[symidx(r0, r1)];
             float D_2A = D/(2.0f*A);
             if (!is0(m2) || !OpenBC){
                 if (is0(m2)) {

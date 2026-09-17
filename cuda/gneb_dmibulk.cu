@@ -35,7 +35,8 @@ gneb_adddmibulk(float* __restrict__ Hx, float* __restrict__ Hy, float* __restric
            float* __restrict__ Ms_, float Ms_mul,
            float* __restrict__ aLUT2d, float* __restrict__ DLUT2d,
            uint8_t* __restrict__ regions,
-           float cx, float cy, float cz, int Nx, int Ny, int Nz,int noi, uint8_t PBC, uint8_t OpenBC, uint8_t GNEB) {
+           float cx, float cy, float cz, float Dbx, float Dby, float Dbz,
+           int Nx, int Ny, int Nz,int noi, uint8_t PBC, uint8_t OpenBC, uint8_t GNEB) {
 
     int ix = blockIdx.x * blockDim.x + threadIdx.x;
     int iy = blockIdx.y * blockDim.y + threadIdx.y;
@@ -64,7 +65,7 @@ gneb_adddmibulk(float* __restrict__ Hx, float* __restrict__ Hy, float* __restric
         }
         int r1 = is0(m1)? r0 : regions[i_];
         float A = aLUT2d[symidx(r0, r1)];
-        float D = DLUT2d[symidx(r0, r1)];
+        float D = Dbx*DLUT2d[symidx(r0, r1)];
         float D_2A = D;
         if(A>0) D_2A = D/(2.0f*A);
         if (!is0(m1) || !OpenBC){                      // do nothing at an open boundary
@@ -88,7 +89,7 @@ gneb_adddmibulk(float* __restrict__ Hx, float* __restrict__ Hy, float* __restric
         }
         int r1 = is0(m2)? r0 : regions[i_];
         float A = aLUT2d[symidx(r0, r1)];
-        float D = DLUT2d[symidx(r0, r1)];
+        float D = Dbx*DLUT2d[symidx(r0, r1)];
         // float D_2A = D/(2.0f*A);
         float D_2A = D;
         if(A>0) D_2A = D/(2.0f*A);
@@ -113,7 +114,7 @@ gneb_adddmibulk(float* __restrict__ Hx, float* __restrict__ Hy, float* __restric
         }
         int r1 = is0(m1)? r0 : regions[i_];
         float A = aLUT2d[symidx(r0, r1)];
-        float D = DLUT2d[symidx(r0, r1)];
+        float D = Dby*DLUT2d[symidx(r0, r1)];
         // float D_2A = D/(2.0f*A);
         float D_2A = D;
         if(A>0) D_2A = D/(2.0f*A);
@@ -137,7 +138,7 @@ gneb_adddmibulk(float* __restrict__ Hx, float* __restrict__ Hy, float* __restric
         }
         int r1 = is0(m2)? r0 : regions[i_];
         float A = aLUT2d[symidx(r0, r1)];
-        float D = DLUT2d[symidx(r0, r1)];
+        float D = Dby*DLUT2d[symidx(r0, r1)];
         // float D_2A = D/(2.0f*A);
         float D_2A = D;
         if(A>0) D_2A = D/(2.0f*A);
@@ -165,7 +166,7 @@ gneb_adddmibulk(float* __restrict__ Hx, float* __restrict__ Hy, float* __restric
             }
             int r1 = is0(m1)? r0 : regions[i_];
             float A = aLUT2d[symidx(r0, r1)];
-            float D = DLUT2d[symidx(r0, r1)];
+            float D = Dbz*DLUT2d[symidx(r0, r1)];
             // float D_2A = D/(2.0f*A);
             float D_2A = D;
             if(A>0) D_2A = D/(2.0f*A);
@@ -190,7 +191,7 @@ gneb_adddmibulk(float* __restrict__ Hx, float* __restrict__ Hy, float* __restric
             }
             int r1 = is0(m2)? r0 : regions[i_];
             float A = aLUT2d[symidx(r0, r1)];
-            float D = DLUT2d[symidx(r0, r1)];
+            float D = Dbz*DLUT2d[symidx(r0, r1)];
             // float D_2A = D/(2.0f*A);
             float D_2A = D;
             if(A>0) D_2A = D/(2.0f*A);
@@ -231,7 +232,7 @@ gneb_adddmibulk(float* __restrict__ Hx, float* __restrict__ Hy, float* __restric
             // if(lclamp(iz%(Nz/noi)-1,Nz/noi) >= 0 || PBCz) m1 = make_float3(mx[i_], my[i_], mz[i_]);
             int r1 = is0(m1)? r0 : regions[i_];
             float A = aLUT2d[symidx(r0, r1)];
-            float D = DLUT2d[symidx(r0, r1)];
+            float D = Dbz*DLUT2d[symidx(r0, r1)];
             // float D_2A = D/(2.0f*A);
             float D_2A = D;
             if(A>0) D_2A = D/(2.0f*A);
@@ -274,7 +275,7 @@ gneb_adddmibulk(float* __restrict__ Hx, float* __restrict__ Hy, float* __restric
 
             int r1 = is0(m2)? r0 : regions[i_];
             float A = aLUT2d[symidx(r0, r1)];
-            float D = DLUT2d[symidx(r0, r1)];
+            float D = Dbz*DLUT2d[symidx(r0, r1)];
             // float D_2A = D/(2.0f*A);
             float D_2A = D;
             if(A>0) D_2A = D/(2.0f*A);
