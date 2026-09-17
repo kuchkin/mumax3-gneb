@@ -37,6 +37,9 @@ var (
 	J2_frustr = 0.0
 	J3_frustr = 0.0
 	J4_frustr = 0.0
+	Dbx = 1.0
+	Dby = 1.0
+	Dbz = 1.0
 	// NumOfImages = NewScalarParam("NumOfImages", "dimless", "Number of Images", &NumOfImages)
 	// NumOfImages   exchParam // number of images
 	Kappa = 0.0
@@ -55,6 +58,9 @@ func init() {
 	// DeclVar("GNEB2D", &GNEB2D, "GNEB?")
 	// DeclVar("GNEB3D", &GNEB3D, "GNEB?")
 	DeclVar("JZ", &JZ, "JZ")
+	DeclVar("Dbx", &Dbx, "Dbx")
+	DeclVar("Dby", &Dby, "Dby")
+	DeclVar("Dbz", &Dbz, "Dbz")
 	DeclVar("J1_frustr", &J1_frustr, "J1_frustr")
 	DeclVar("J2_frustr", &J2_frustr, "J2_frustr")
 	DeclVar("J3_frustr", &J3_frustr, "J3_frustr")
@@ -77,7 +83,7 @@ func AddExchangeField(dst *data.Slice) {
 		Refer("mulkers2017")
 		cuda.AddDMI(dst, M.Buffer(), lex2.Gpu(), din2.Gpu(), ms, regions.Gpu(), M.Mesh(), OpenBC) // dmi+exchange
 	case bulk && !inter:
-		cuda.AddDMIBulk(dst, M.Buffer(), lex2.Gpu(), dbulk2.Gpu(), ms, regions.Gpu(), M.Mesh(), OpenBC) // dmi+exchange
+		cuda.AddDMIBulk(dst, M.Buffer(), lex2.Gpu(), dbulk2.Gpu(), ms, regions.Gpu(), M.Mesh(), float32(Dbx), float32(Dby), float32(Dbz), OpenBC) // dmi+exchange
 		// TODO: add ScaleInterDbulk and InterDbulk
 	case inter && bulk:
 		util.Fatal("Cannot have interfacial-induced DMI and bulk DMI at the same time")
