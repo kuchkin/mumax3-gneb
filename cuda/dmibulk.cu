@@ -133,8 +133,8 @@ adddmibulk(float* __restrict__ Hx, float* __restrict__ Hy, float* __restrict__ H
         }
         int r1 = is0(m2)? r0 : regions[i_];
         float A = aLUT2d[symidx(r0, r1)];
-        float D = DLUT2d[symidx(r0, r1)];
-        float D_2A = Dby*D/(2.0f*A);
+        float D = Dby*DLUT2d[symidx(r0, r1)];
+        float D_2A = D/(2.0f*A);
         if (!is0(m2) || !OpenBC){
             if (is0(m2)) {
                 m2.x = m0.x + (+cy * D_2A * m0.z);
